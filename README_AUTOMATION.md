@@ -67,3 +67,6 @@ Depuis la racine du projet :
 ```bash
 make all
 make port-forward PORT=8081
+```
+
+Après make port-forward, il faut ouvrir l’application dans le navigateur via l’onglet PORTS de Codespaces (bouton Open in Browser).
