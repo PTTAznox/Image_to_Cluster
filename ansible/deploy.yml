@@ -1,0 +1,10 @@
+- name: Deploy custom Nginx app to K3d
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Apply Kubernetes manifests
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ playbook_dir }}/manifests/app.yml"
