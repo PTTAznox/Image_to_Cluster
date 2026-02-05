@@ -1,71 +1,68 @@
-# Déploiement automatisé — Image_to_Cluster (Séquence 3)
+# Image_to_Cluster — Automatisation Séquence 3
 
-Ce dépôt propose une solution **simple et reproductible** pour :
+Ce projet met en place une chaîne **simple, claire et reproductible** pour déployer une page web Nginx sur un cluster Kubernetes local **k3d**, à partir d’une image construite automatiquement.
 
-1. **Construire** une image Docker Nginx personnalisée (avec votre `index.html`) via **Packer**
-2. **Créer** un cluster **k3d** (Kubernetes local)
-3. **Importer** l’image dans le cluster k3d
-4. **Déployer** l’application sur Kubernetes via **Ansible**
-5. **Accéder** à l’application via un `port-forward` (compatible Codespaces)
-
-L’objectif est de pouvoir déployer l’ensemble en **1 commande**.
+L’objectif est de pouvoir passer de **zéro** à une application déployée avec **une commande**, puis d’y accéder via Codespaces.
 
 ---
 
-## Prérequis
+## Objectifs de la solution
 
-- Un environnement Linux (ex : **GitHub Codespaces** recommandé)
-- Docker disponible (dans Codespaces c’est généralement déjà OK)
+La solution automatise les étapes suivantes :
 
-> ✅ La plupart des dépendances (Packer, Ansible, k3d, kubectl, librairies Python) sont installées automatiquement via `make bootstrap`.
-
----
-
-## Structure du projet (repères)
-
-- `index.html` : page web servie par Nginx (personnalisée)
-- `packer/nginx.pkr.hcl` : build de l’image Docker avec Packer
-- `ansible/deploy.yml` : playbook Ansible de déploiement Kubernetes
-- `ansible/manifests/app.yml` : manifests Kubernetes (Deployment + Service)
-- `scripts/bootstrap.sh` : installation + correctifs (dépendances + erreurs fréquentes)
-- `Makefile` : orchestration “1 commande”
+1. **Installer/Préparer** l’environnement (Packer, Ansible, k3d, kubectl, dépendances Python)
+2. **Créer** un cluster Kubernetes avec **k3d**
+3. **Construire** une image Docker Nginx personnalisée (avec `index.html`) via **Packer**
+4. **Importer** l’image dans le cluster k3d (car k3d/containerd ne voit pas automatiquement les images Docker locales)
+5. **Déployer** l’application sur Kubernetes via **Ansible**
+6. **Accéder** à l’application via un **port-forward** (Codespaces)
 
 ---
 
 ## Pourquoi cette automatisation ?
 
-Pendant le lab, plusieurs problèmes peuvent bloquer le déploiement. La solution automatisée les **corrige en amont** :
+Pendant le lab, certaines erreurs bloquaient le déploiement. La solution les corrige **en amont** :
 
-### Problèmes déjà rencontrés + corrections intégrées
+### Problèmes rencontrés + correctifs intégrés
 
 - **APT bloqué par Yarn (NO_PUBKEY / dépôt non signé)**
-  - Le script `bootstrap.sh` **désactive automatiquement** le repo Yarn s’il empêche `apt update`.
-- **Packer : erreur `docker-tag` (type list)**
-  - Le template Packer est corrigé (`tag = ["1.0"]` au lieu de `tag = "1.0"`).
-- **Ansible : le module k8s nécessite la lib Python `kubernetes`**
+  - `scripts/bootstrap.sh` désactive automatiquement le dépôt Yarn s’il empêche `apt update`.
+- **Packer : erreur `docker-tag` (type attendu = liste)**
+  - Le template Packer utilise `tag = ["1.0"]` (et non `tag = "1.0"`).
+- **Ansible : module Kubernetes nécessite la librairie Python `kubernetes`**
   - Installation automatique via `pip` dans `bootstrap.sh`.
 - **Erreur “Namespace is required for apps/v1.Deployment”**
-  - Le namespace est explicitement défini dans les manifests (`metadata.namespace: default`).
+  - Le namespace est explicitement défini dans les manifests : `metadata.namespace: default`.
 - **Image non disponible dans k3d**
-  - Étape `k3d image import` intégrée dans le workflow.
+  - Étape `k3d image import` incluse dans le workflow.
 
 ---
 
-## Utilisation (workflow recommandé)
+## Structure du projet (repères)
 
-### Étape 1 — Tout faire automatiquement (recommandé)
+- `index.html` : page web à servir via Nginx
+- `packer/nginx.pkr.hcl` : template Packer pour builder l’image Docker
+- `ansible/manifests/app.yml` : manifests Kubernetes (Deployment + Service)
+- `ansible/deploy.yml` : playbook Ansible (déploiement via kubernetes.core.k8s)
+- `scripts/bootstrap.sh` : installation + correctifs
+- `Makefile` : commandes simples pour tout automatiser
+
+---
+
+## Prérequis
+
+- Recommandé : **GitHub Codespaces**
+- Docker disponible (dans Codespaces, en général c’est déjà le cas)
+
+> ✅ Les outils (Packer, Ansible, k3d, kubectl, dépendances Python) sont installés automatiquement via `make bootstrap`.
+
+---
+
+## Utilisation (méthode recommandée)
+
+### 1) Déployer l’ensemble automatiquement
 
 Depuis la racine du projet :
 
 ```bash
 make all
-
-## Accéder à l’application (obligatoire après `make all`)
-
-> ⚠️ Important : la commande `make all` **ne lance pas** le port-forward.
-> Le port-forward est une commande interactive qui reste attachée au terminal, donc elle se lance **à part**.
-
-1) Après `make all`, lancer le port-forward sur un port libre (ex : 8081) :
-
-```bash
-make port-forward PORT=8081
