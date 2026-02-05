@@ -59,3 +59,13 @@ Depuis la racine du projet :
 
 ```bash
 make all
+
+## Accéder à l’application (obligatoire après `make all`)
+
+> ⚠️ Important : la commande `make all` **ne lance pas** le port-forward.
+> Le port-forward est une commande interactive qui reste attachée au terminal, donc elle se lance **à part**.
+
+1) Après `make all`, lancer le port-forward sur un port libre (ex : 8081) :
+
+```bash
+make port-forward PORT=8081
